@@ -1,0 +1,9 @@
+# Python 虚拟环境
+.venv/
+__pycache__/
+*.pyc
+
+# macOS
+.DS_Store
+
+# 注意：state/ 必须提交 —— workflow 靠它跨轮次比对快照

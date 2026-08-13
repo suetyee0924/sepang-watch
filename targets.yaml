@@ -1,0 +1,541 @@
+# sepang-watch 监测目标
+#
+# priority: high  => 变化即高优先级告警（开票相关核心页）
+# keywords        => 出现即告警（开卖信号）
+# negative_keywords => 现在有、将来消失 => 强烈开卖信号（如"即将开卖""敬请期待"）
+#
+# 提示：先用 --dry-run 跑一轮，看哪些页面被 Cloudflare 拦（403）。
+# 被拦的页面交给 Claude Code 处理：让它打开开发者工具找出真实的 JSON 接口，
+# 换成 mode: json 直接打接口，比爬 HTML 稳得多。
+
+targets:
+  # ─────────────── 核心：开票状态 ───────────────
+  - id: bahraingp-home
+    label: 巴林GP官网（价格泄露源头）
+    url: https://www.bahraingp.com/
+    priority: high
+    keywords: ["buy now", "on sale", "purchase", "tickets available", "sepang", "malaysia"]
+    negative_keywords: ["coming soon", "register your interest", "notify me"]
+
+  - id: bahraingp-tickets
+    label: 巴林GP官网 · 票务页
+    # /tickets 是 JS 渲染的空壳（抓下来只有 235 字符），且 301 会降级到 http、
+    # 常年 10s+ 超时。这个 blog 页才是有真内容的票务说明（grandstand/hillstand）。
+    url: https://www.bahraingp.com/blog/events/ticket-information/
+    priority: high
+    keywords: ["buy", "add to cart", "grandstand", "hillstand", "select"]
+    negative_keywords: ["coming soon", "sold out", "not yet"]
+
+  - id: sepang-ticketing
+    label: 雪邦赛道 · 票务页
+    url: https://www.sepangcircuit.com/ticketing
+    priority: high
+    keywords: ["formula 1", "f1", "bahrain", "buy tickets", "october"]
+    negative_keywords: ["coming soon"]
+
+  - id: sepang-home
+    label: 雪邦赛道 · 首页
+    url: https://www.sepangcircuit.com/
+    priority: high
+    keywords: ["bahrain grand prix", "formula 1", "tickets on sale"]
+
+  - id: ticket2u-search
+    label: Ticket2U（马来西亚授权代理）
+    url: https://www.ticket2u.com.my/
+    priority: high
+    keywords: ["formula 1", "f1", "bahrain", "sepang grand prix"]
+
+  - id: f1-tickets-store
+    label: F1 官方票务店
+    url: https://tickets.formula1.com/en
+    priority: high
+    keywords: ["malaysia", "sepang", "bahrain grand prix"]
+
+  # ─────────────── 核心：款待 / Paddock Club ───────────────
+  - id: f1exp-sepang
+    label: F1 Experiences · 雪邦站页面
+    url: https://f1experiences.com/en/2026-bahrain-grand-prix
+    priority: high
+    keywords: ["on sale", "book now", "buy now", "packages available", "deposit programme now open"]
+    negative_keywords: ["sign up to be notified", "register your interest", "coming soon"]
+
+  - id: f1-hospitality
+    label: F1 官方款待总览页
+    url: https://tickets.formula1.com/en/h-formula1-hospitality
+    priority: high
+    keywords: ["malaysia", "sepang", "bahrain"]
+
+  - id: f1exp-agents
+    label: F1 Experiences 授权代理名单（防冒充）
+    url: https://f1experiences.com/en/authorized-sales-agents
+    priority: normal
+    keywords: ["china", "japan", "malaysia", "singapore", "hong kong"]
+
+  - id: f1exp-paddock-club
+    label: F1 Experiences · Paddock Club 产品页
+    url: https://f1experiences.com/en/paddock-club
+    priority: high
+    keywords: ["malaysia", "sepang", "bahrain grand prix"]
+
+  # ─────────────── 授权代理（已知有雪邦库存/报价的） ───────────────
+  - id: gpdestinations-sepang
+    label: GP Destinations · 雪邦购票指南（已报 Paddock Club 价）
+    url: https://gpdestinations.com/how-to-buy-tickets-2026-bahrain-grand-prix-in-malaysia/
+    priority: high
+    keywords: ["on sale", "now available", "book", "price"]
+
+  # [已停用] 403 Cloudflare
+  # - id: global-tickets-sepang
+  #   label: Global-Tickets · 雪邦站
+  #   url: https://www.global-tickets.com/en/Sport/Motorsports/Formula-1/Formula-1-Sepang/
+  #   priority: normal
+  #   keywords: ["on sale", "book now", "available"]
+  #   negative_keywords: ["early bird", "notify"]
+
+  # ─────────────── 泄露与本地媒体（往往比官方快） ───────────────
+  # [已停用] 404；tag/f1 与 tag/formula-1 都不存在，rss-paultan 已覆盖同一来源
+  # - id: paultan-f1-tag
+  #   label: Paul Tan · F1 标签页
+  #   url: https://paultan.org/tag/formula-1/
+  #   mode: html
+  #   priority: high
+  #   keywords: ["ticket", "sepang", "paddock", "on sale", "price"]
+
+  - id: lowyat-news
+    label: Lowyat.NET · 新闻
+    url: https://www.lowyat.net/category/news/
+    priority: normal
+    keywords: ["f1", "sepang", "ticket", "bahrain"]
+
+  - id: soyacincau
+    label: SoyaCincau
+    url: https://soyacincau.com/
+    priority: normal
+    keywords: ["f1", "sepang", "ticket", "formula 1"]
+
+  # ─────────────── 梅奔 / Petronas / KLCC 活动 ───────────────
+  - id: petronas-newsroom
+    label: Petronas 新闻室（市区活动多从这发）
+    url: https://www.petronas.com/media/press-release
+    priority: normal
+    keywords: ["formula 1", "f1", "grand prix", "klcc", "showcase", "fan", "mercedes"]
+
+  - id: suria-klcc-events
+    label: Suria KLCC · 活动页
+    url: https://www.suriaklcc.com.my/promotions/   # /happenings/ 已 404
+    priority: normal
+    keywords: ["formula", "f1", "petronas", "mercedes", "grand prix", "racing"]
+
+  - id: mercedes-f1-news
+    label: Mercedes-AMG F1 官网新闻
+    url: https://www.mercedesamgf1.com/news
+    priority: normal
+    keywords: ["malaysia", "sepang", "kuala lumpur", "fan event", "klcc"]
+
+  # ─────────────── 赛事信息 ───────────────
+  - id: f1-race-page
+    label: F1 官网 · 本站赛事页（时刻表 / 支援赛）
+    url: https://www.formula1.com/en/racing/2026
+    priority: normal
+    keywords: ["malaysia", "sepang", "bahrain grand prix"]
+
+  # ─────────────── Google Alerts（自建 RSS，见 README） ───────────────
+  # 在 https://www.google.com/alerts 建好 alert 后选择"传送至 RSS"，
+  # 把生成的 feed 地址粘到这里，mode 用 text。
+  # - id: galert-sepang-tickets
+  #   label: Google Alerts · Sepang F1 tickets
+  #   url: https://www.google.com/alerts/feeds/XXXXXXXX/YYYYYYYY
+  #   mode: text
+  #   priority: high
+
+  # ─────────────── 对号入座探针 ───────────────
+  # 开票后这个目标最有价值：判断是分区对号还是自由入座。
+  # 开卖后把 url 换成实际的选座页面。
+  - id: seating-probe
+    label: 对号入座探针（开票后启用）
+    url: https://tickets.formula1.com/en
+    priority: normal
+    keywords:
+      - "select your seat"
+      - "seat map"
+      - "seating plan"
+      - "reserved seating"
+      - "numbered seat"
+      - "unreserved"
+      - "free seating"
+      - "general admission"
+      - "first come"
+
+  # ═══════════════════════════════════════════════════════════
+  #  以下为补充监测项
+  # ═══════════════════════════════════════════════════════════
+
+  # ─────────────── 本地媒体 RSS（泄露最早出现地） ───────────────
+  # rss 模式：只有命中 filter_keywords 的新条目才会触发告警，
+  # 无关文章刷屏不会打扰你。
+
+  - id: rss-paultan
+    label: Paul Tan RSS
+    url: https://paultan.org/feed/
+    mode: rss
+    priority: high
+    filter_keywords: ["f1", "formula 1", "sepang", "grand prix", "ticket", "paddock", "bahrain"]
+
+  - id: rss-lowyat
+    label: Lowyat.NET RSS
+    url: https://www.lowyat.net/feed/
+    mode: rss
+    priority: high
+    filter_keywords: ["f1", "formula 1", "sepang", "grand prix", "ticket", "bahrain"]
+
+  - id: rss-soyacincau
+    label: SoyaCincau RSS
+    url: https://soyacincau.com/feed/
+    mode: rss
+    priority: normal
+    filter_keywords: ["f1", "formula 1", "sepang", "grand prix", "ticket"]
+
+  - id: rss-nst
+    label: New Straits Times RSS
+    url: https://www.nst.com.my/feed
+    mode: rss
+    priority: high
+    filter_keywords: ["f1", "formula 1", "sepang", "grand prix", "ticket", "bahrain"]
+
+  # [已停用] 404；NST 只有 /feed 一个可用源，rss-nst 已覆盖
+  # - id: rss-nst-sports
+  #   label: NST 体育版 RSS（备用源）
+  #   url: https://www.nst.com.my/sports/rss.xml
+  #   mode: rss
+  #   priority: normal
+  #   filter_keywords: ["f1", "formula 1", "sepang", "grand prix", "ticket"]
+
+  # ─────────────── Ticket2U（马来西亚授权代理，多入口） ───────────────
+
+  - id: ticket2u-events
+    label: Ticket2U · 活动列表
+    url: https://www.ticket2u.com.my/event
+    priority: high
+    keywords: ["formula 1", "f1", "bahrain", "sepang", "grand prix"]
+
+  # [已停用] 404；站内搜索无公开 URL（/search 404、/event/search 500），ticket2u-events 已覆盖
+  # - id: ticket2u-search-f1
+  #   label: Ticket2U · 站内搜 F1
+  #   url: https://www.ticket2u.com.my/search?q=formula
+  #   priority: high
+  #   keywords: ["bahrain", "sepang", "grand prix", "october"]
+
+  # [已停用] 404；同上
+  # - id: ticket2u-search-sepang
+  #   label: Ticket2U · 站内搜 Sepang
+  #   url: https://www.ticket2u.com.my/search?q=sepang
+  #   priority: high
+  #   keywords: ["formula", "f1", "bahrain", "grand prix"]
+
+  # ─────────────── 梅奔 / Petronas / KLCC 活动（加强） ───────────────
+
+  - id: petronas-media
+    label: Petronas · 媒体中心
+    url: https://www.petronas.com/media
+    priority: normal
+    keywords: ["formula 1", "f1", "grand prix", "klcc", "showcase", "fan", "mercedes", "sepang"]
+
+  # [已停用] 404；petronas-media / petronas-newsroom 已覆盖
+  # - id: petronas-motorsports
+  #   label: Petronas · 赛车运动页
+  #   url: https://www.petronas.com/motorsports
+  #   priority: normal
+  #   keywords: ["klcc", "showcase", "fan zone", "meet", "event", "kuala lumpur"]
+
+  # [已停用] 404；已由 suria-klcc-events(promotions) + suria-klcc-home 覆盖
+  # - id: suria-klcc-whats-on
+  #   label: Suria KLCC · What's On
+  #   url: https://www.suriaklcc.com.my/whats-on/
+  #   priority: normal
+  #   keywords: ["formula", "f1", "petronas", "mercedes", "grand prix", "racing", "showcase"]
+
+  - id: suria-klcc-home
+    label: Suria KLCC · 首页（Banner 常先于活动页更新）
+    url: https://www.suriaklcc.com.my/
+    priority: normal
+    keywords: ["formula", "f1", "petronas", "mercedes", "grand prix", "racing"]
+
+  # ─────────────── 新加坡站转售（10/9–11，与雪邦连着） ───────────────
+  # 注意：官方与授权转售优先。viagogo / StubHub 这类二级平台价格浮动大、
+  # 且历史上有交付纠纷，只作为"有没有票"的信号源，不作为购买建议。
+
+  - id: sg-official-tickets
+    label: 新加坡GP官网 · 票务页
+    url: https://www.singaporegp.sg/en/tickets
+    priority: high
+    keywords: ["available", "on sale", "buy", "released", "additional tickets", "resale"]
+    negative_keywords: ["sold out", "fully booked"]
+
+  - id: sg-official-resale
+    label: 新加坡GP官网 · 官方转售 / 二手
+    url: https://www.singaporegp.sg/en/tickets/official-resellers   # ticket-information 已 404
+    priority: high
+    keywords: ["resale", "official resale", "transfer", "exchange"]
+
+  - id: sg-f1-store
+    label: F1 官方票务店 · 新加坡站
+    url: https://tickets.formula1.com/en/223-singapore-grand-prix
+    priority: high
+    keywords: ["available", "buy", "in stock", "select"]
+    negative_keywords: ["sold out", "unavailable"]
+
+  - id: sg-ticombo
+    label: Ticombo · 新加坡站（买家保障较好的转售平台）
+    url: https://www.ticombo.com/en/e/singapore-grand-prix
+    priority: normal
+    keywords: ["grandstand", "available", "tickets"]
+
+  # [已停用] 403 机器人防护，从 CI 出口 IP 只会更严
+  # - id: sg-stubhub
+  #   label: StubHub · 新加坡站
+  #   url: https://www.stubhub.com/singapore-grand-prix-tickets/grouping/1878152/
+  #   priority: normal
+  #   keywords: ["grandstand", "available", "listings"]
+  #
+  # # Reddit 的 .rss 是公开且稳定的，车迷退票常先发在这里
+
+  # [已停用] 404/429；Reddit 对未认证 .rss 限流，GitHub Actions 共享出口 IP 基本必挂
+  # - id: rss-reddit-f1tickets
+  #   label: r/F1Tickets 新帖
+  #   url: https://www.reddit.com/r/F1Tickets/new/.rss
+  #   mode: rss
+  #   priority: high
+  #   filter_keywords: ["singapore", "sepang", "malaysia", "bahrain"]
+
+  # [已停用] 429；同上
+  # - id: rss-reddit-f1-sg
+  #   label: r/formula1 搜「Singapore ticket」
+  #   url: https://www.reddit.com/r/formula1/search.rss?q=singapore+ticket&restrict_sr=1&sort=new
+  #   mode: rss
+  #   priority: normal
+  #   filter_keywords: ["ticket", "grandstand", "sell", "spare", "resale"]
+
+  # [已停用] 429；同上
+  # - id: rss-reddit-f1-sepang
+  #   label: r/formula1 搜「Sepang / Malaysia」
+  #   url: https://www.reddit.com/r/formula1/search.rss?q=sepang+OR+malaysia+tickets&restrict_sr=1&sort=new
+  #   mode: rss
+  #   priority: high
+  #   filter_keywords: ["ticket", "sepang", "malaysia", "price", "on sale", "paddock"]
+
+  # ─────────────── F1 官方赛事页 / FIA 文件（时刻表·法规·支援赛） ───────────────
+  # FIA 的 documents 页是最权威的一手源：赛事时刻表、场地图、
+  # 赛会决议、支援赛安排都先挂在这里，往往早于媒体报道。
+
+  - id: f1-race-bahrain-2026
+    label: F1 官网 · 巴林站赛事页（2026）
+    url: https://www.formula1.com/en/racing/2026/bahrain
+    priority: high
+    keywords: ["sepang", "malaysia", "tickets", "timetable", "schedule", "buy"]
+
+  # [已停用] 404；这个 slug 是当初猜的备用，f1-race-bahrain-2026 才是真实页面
+  # - id: f1-race-malaysia-2026
+  #   label: F1 官网 · 马来西亚站赛事页（备用 slug）
+  #   url: https://www.formula1.com/en/racing/2026/malaysia
+  #   priority: high
+  #   keywords: ["sepang", "tickets", "timetable", "schedule", "buy"]
+
+  - id: rss-f1-latest
+    label: F1 官网新闻 RSS
+    url: https://www.formula1.com/content/fom-website/en/latest/all.xml
+    mode: rss
+    priority: high
+    filter_keywords: ["sepang", "malaysia", "bahrain", "ticket", "calendar", "timetable"]
+
+  - id: fia-f1-documents-2026
+    label: FIA · F1 2026 赛季文件库
+    # 原 URL 的 season-2026-2229 是个不存在的内部 id（2025 赛季才是 2071），常年 500。
+    url: https://www.fia.com/events/fia-formula-one-world-championship/season-2026/2026-fia-formula-one-world-championship
+    priority: high
+    keywords: ["sepang", "malaysia", "bahrain", "timetable", "time schedule", "circuit"]
+
+  - id: fia-documents-root
+    label: FIA · 文件总入口（备用）
+    url: https://www.fia.com/documents
+    priority: normal
+    keywords: ["sepang", "malaysia", "bahrain grand prix"]
+
+  - id: fia-news
+    label: FIA · 新闻（WMSC 决议在此发布）
+    url: https://www.fia.com/news
+    priority: normal
+    keywords: ["world motor sport council", "wmsc", "calendar", "malaysia", "sepang", "bahrain"]
+
+  - id: fia-wmsc
+    label: FIA · 世界汽车运动理事会页面
+    url: https://www.fia.com/world-motor-sport-council
+    priority: normal
+    keywords: ["2026", "calendar", "malaysia", "sepang", "bahrain"]
+
+  # ─────────────── 授权代理各自的官网 ───────────────
+  # 说明：F1 有两套不同的授权体系，别混淆——
+  #   1) F1 Experiences「授权销售代理」：全球 28 家，卖官方套票
+  #   2) Paddock Club「授权分销商」：全球仅 8 家，才是 Paddock Club 的正经货源
+  # 想买 Paddock Club，优先盯下面标了 [PC分销商] 的两家。
+  # 以下域名均已核实；名单上其余代理的网址请用 README 里的方法批量抓取。
+
+  - id: agent-edge-global
+    label: "Edge Global（泰国 · Golden Card 的授权转售商，非直接分销商）"
+    url: https://edgeglobalevents.com/f1-experiences/
+    priority: high
+    keywords: ["malaysia", "sepang", "bahrain", "october", "on sale", "enquire"]
+
+  - id: agent-zk-sports
+    label: "[PC分销商] ZK Sports（迪拜 · 中东唯一 PC 分销商）"
+    url: https://www.zk-sports.com/
+    priority: high
+    keywords: ["malaysia", "sepang", "bahrain grand prix", "paddock club"]
+
+  - id: agent-senate-gp
+    label: Senate Grand Prix（摩纳哥）
+    url: https://www.senategpexperiences.com/
+    priority: normal
+    keywords: ["malaysia", "sepang", "bahrain", "paddock club", "champions club"]
+
+  - id: agent-grandprixevents
+    label: Grand Prix Events（官方款待日历，可看各站开卖状态）
+    url: https://grandprixevents.com/f1-hospitality
+    priority: high
+    keywords: ["malaysia", "sepang", "bahrain"]
+    negative_keywords: ["coming soon"]
+
+  - id: agent-fanofsport
+    label: fanofsport / MTA Travel（澳新 · 亚太时区）
+    url: https://fanofsport.com/
+    priority: normal
+    keywords: ["malaysia", "sepang", "bahrain", "october 2026"]
+
+  - id: f1exp-agents-en
+    label: F1 Experiences 授权代理名单（英文版，抓链接用）
+    url: https://f1experiences.com/authorized-sales-agents
+    priority: normal
+    keywords: ["china", "japan", "malaysia", "singapore", "hong kong", "asia"]
+
+  # ─────────────── Paddock Club 官方授权分销商（全球仅约 8 家） ───────────────
+  # 这些是 Paddock Club 的正经货源，域名均已核实。
+  # 注意区分"分销商 Distributor"与"转售商 Sub-Seller"——后者从前者拿货。
+
+  - id: pc-engage
+    label: "[PC分销商] Engage Hospitality（英国 · 2026 赛季授权）"
+    url: https://engagehospitality.co.uk/
+    priority: high
+    keywords: ["malaysia", "sepang", "bahrain", "october"]
+
+  - id: pc-goprivilege
+    label: "[PC分销商] Go Privilege（英国）"
+    url: https://goprivilege.co.uk/f1-paddock-club
+    priority: high
+    keywords: ["malaysia", "sepang", "bahrain"]
+
+  - id: pc-bam
+    label: "[PC分销商] BAM Motorsport（英国）"
+    url: https://bammotorsportmanagement.com/
+    priority: normal
+    keywords: ["malaysia", "sepang", "bahrain", "paddock club"]
+
+  - id: pc-emboss
+    label: "[PC分销商] Emboss Events"
+    # 他们自己官网上挂的 paddock-club 链接本身就是死链（www 和非 www 都 404），
+    # 改盯 2026 赛季日历页 —— 雪邦站上架时这里会先出现。
+    url: https://embossevents.com/f1-calendar-2026/
+    priority: normal
+    keywords: ["malaysia", "sepang", "bahrain"]
+
+  - id: pc-zk-paddock
+    label: "[PC分销商] ZK Sports · Paddock Club 专页"
+    url: https://www.zk-sports.com/paddock-club-tickets
+    priority: high
+    keywords: ["malaysia", "sepang", "bahrain grand prix", "october"]
+
+  - id: pc-edge-paddock
+    label: Edge Global · Paddock Club 专页（含车队套房）
+    url: https://edgeglobalevents.com/f1-paddock-club/
+    priority: high
+    keywords: ["malaysia", "sepang", "bahrain", "team suite"]
+
+  # ─────────────── 代理的雪邦站专属页面（最高价值） ───────────────
+  # 这些是已经为本站建好的专页，比首页信号强得多——
+  # 价格变动、售罄、库存释出都会直接反映在这里。
+
+  - id: pc-zk-product-clubsuite
+    label: "[已开卖] ZK Sports · Paddock Club Club Suite 三天票"
+    url: https://www.zk-sports.com/product-page/bahrain-grand-prix-2026-3-day-paddock-club-club-suite-f1
+    priority: high
+    keywords: ["sold out", "out of stock", "unavailable", "waitlist"]
+    negative_keywords: ["add to cart", "buy now", "in stock"]
+
+  - id: gootickets-sepang
+    label: Gootickets · 巴林站(马来西亚)专页
+    url: https://www.gootickets.com/en/7-formula-1/83099-bahrain-in-malaysia/
+    priority: high
+    keywords: ["add to cart", "buy", "available", "grandstand", "paddock"]
+    negative_keywords: ["sold out", "coming soon", "notify"]
+
+  - id: gpe-sepang-race
+    label: Grand Prix Events · 本站专页（Quint 子公司）
+    url: https://grandprixevents.com/2026-bahrain-grand-prix
+    priority: high
+    keywords: ["on sale", "book", "buy", "available", "paddock club", "price"]
+    negative_keywords: ["coming soon", "register interest"]
+
+  - id: raceexp-sepang
+    label: Race Experiences · 雪邦站专页
+    url: https://raceexperiences.com/f1-tickets/malaysian-grand-prix-sepang/
+    priority: high
+    keywords: ["on sale", "book now", "available", "price", "grandstand"]
+    negative_keywords: ["coming soon", "sold out"]
+
+  - id: pc-goprivilege-packages
+    label: Go Privilege · Paddock Club 套餐列表
+    url: https://goprivilege.co.uk/events/paddock-club-hospitality-packages
+    priority: high
+    keywords: ["malaysia", "sepang", "bahrain", "october"]
+
+  - id: edge-hospitality
+    label: Edge Global · 款待总览页
+    url: https://edgeglobalevents.com/f1-hospitality/
+    priority: normal
+    keywords: ["malaysia", "sepang", "bahrain", "october"]
+
+  # ─────────────── 授权代理总目录页（按赛季/系列列出） ───────────────
+
+  - id: agent-p1travel-2026
+    label: P1 Travel · 2026 赛季列表（荷兰）
+    url: https://www.p1travel.com/en/series/formula-1-2026
+    priority: high
+    keywords: ["malaysia", "sepang", "bahrain", "october"]
+
+  - id: agent-gpt-worldwide
+    label: GPT Worldwide / GP Destinations（奥地利）
+    url: https://www.gpt-worldwide.com/gpdestinations/en/formel1
+    priority: normal
+    keywords: ["malaysia", "sepang", "bahrain", "malaysien"]
+
+  - id: agent-dreamsetgo
+    label: DreamSetGo · 赛车运动（印度 · 亚太时区）
+    url: https://www.dreamsetgo.com/motorsports
+    priority: normal
+    keywords: ["malaysia", "sepang", "bahrain", "october"]
+
+  - id: agent-allsport
+    label: All Sport（意大利）
+    url: https://www.allsport.travel/ticket
+    priority: normal
+    keywords: ["malaysia", "sepang", "bahrain"]
+
+  - id: agent-aristos
+    label: Aristos International（墨西哥）
+    url: https://www.aristosintl.com/
+    priority: normal
+    keywords: ["malaysia", "sepang", "bahrain"]
+
+  - id: agent-sportsnet
+    label: Sportsnet Holidays（澳洲 · 亚太时区）
+    url: https://sportsnetholidays.com/
+    priority: normal
+    keywords: ["malaysia", "sepang", "bahrain", "october"]

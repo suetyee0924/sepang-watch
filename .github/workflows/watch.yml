@@ -1,0 +1,64 @@
+name: sepang-watch
+
+on:
+  schedule:
+    # 每 20 分钟一次。注意：GitHub 免费额度的 cron 会有 5~20 分钟延迟，
+    # 开票当天建议同时手动盯着，别把 20 分钟当成保证值。
+    - cron: "*/20 * * * *"
+  workflow_dispatch:          # 支持手动触发
+    inputs:
+      init:
+        description: "建立初始快照（不告警）"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write             # 需要把 state/ 写回仓库
+  issues: write               # 用 GitHub Issue 当推送通道时需要
+
+concurrency:
+  group: sepang-watch
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: 安装依赖
+        run: pip install -r requirements.txt
+
+      - name: 跑一轮监测
+        env:
+          # 以下通道配了哪个就走哪个，可以同时开多条。一个都不配则只打印日志。
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}              # 推荐：无需注册
+          NTFY_SERVER: ${{ secrets.NTFY_SERVER }}            # 可选，自建服务器
+          NTFY_TOKEN: ${{ secrets.NTFY_TOKEN }}              # 可选
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}          # 自动注入，开 Issue 用
+          USE_GITHUB_ISSUE: ${{ vars.USE_GITHUB_ISSUE }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          DISCORD_MENTION_ID: ${{ secrets.DISCORD_MENTION_ID }}   # 可选，高优先级时 @自己
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          if [ "${{ inputs.init }}" = "true" ]; then
+            python watch.py --init
+          else
+            python watch.py
+          fi
+
+      - name: 保存快照
+        run: |
+          git config user.name  "sepang-watch"
+          git config user.email "actions@github.com"
+          git add state/
+          git diff --staged --quiet || git commit -m "snapshot: $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push
